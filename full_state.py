@@ -26,3 +26,20 @@ def apply_single_qubit_gate(state, gate, qubit, n):
             op = np.kron(op, I)
 
     return op @ state
+
+'''Controlled not for n-qubits'''
+def apply_cnot(state, control, target, n):
+
+    new_state = np.zeros_like(state)
+
+    for i in range(len(state)):
+        bits = list(format(i, f'0{n}b'))
+
+        if bits[control] == '1':
+            bits[target] = '0' if bits[target] == '1' else '1'
+
+        j = int("".join(bits), 2)
+
+        new_state[j] += state[i]
+
+    return new_state
