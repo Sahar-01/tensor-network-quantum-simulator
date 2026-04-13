@@ -1,9 +1,5 @@
 import numpy as np
 
-
-# ----------------------------
-# APPLY GATE TO FULL STATE
-# ----------------------------
 def apply_full_gate(psi, G, N, k, two_qubit=False):
     """
     Apply a gate to a full quantum state.
@@ -19,38 +15,24 @@ def apply_full_gate(psi, G, N, k, two_qubit=False):
     - new state vector
     """
 
-    # reshape into tensor form
     psi = psi.reshape([2] * N)
 
     if not two_qubit:
-        # ----------------------------
-        # SINGLE-QUBIT GATE
-        # ----------------------------
-        # Contract gate with qubit k
         psi = np.tensordot(G, psi, axes=[1, k])
 
-        # Move new axis into position k
         psi = np.moveaxis(psi, 0, k)
 
     else:
-        # ----------------------------
-        # TWO-QUBIT GATE
-        # ----------------------------
         # reshape (4,4) → (2,2,2,2)
         G = G.reshape(2, 2, 2, 2)
 
-        # Contract input indices with qubits k and k+1
         psi = np.tensordot(G, psi, axes=[[2, 3], [k, k+1]])
 
-        # Move output indices back to positions k and k+1
         psi = np.moveaxis(psi, [0, 1], [k, k+1])
 
     return psi.reshape(-1)
 
 
-# ----------------------------
-# OPTIONAL: DEBUG VERSION
-# ----------------------------
 def apply_full_gate_debug(psi, G, N, k, two_qubit=False):
     psi = psi.reshape([2] * N)
 

@@ -10,7 +10,6 @@ def mps_decompose(psi, N, cutoff=1e-10):
 
         U, S, Vh = np.linalg.svd(psi, full_matrices=False)
 
-        # 🔥 TRUNCATION
         max_bond = 4
         keep = np.arange(len(S)) < max_bond
         if np.sum(keep) == 0:  # safety (avoid empty)

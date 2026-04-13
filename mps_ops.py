@@ -14,26 +14,16 @@ def apply_two_qubit_gate(mps, G, k, cutoff=1e-10):
     left_dim = A.shape[0]
     right_dim = B.shape[2]
 
-    # ----------------------------
-    # MERGE
-    # ----------------------------
     theta = np.tensordot(A, B, axes=[2, 0])  # (l,2,2,r)
 
-    # ----------------------------
-    # APPLY GATE
-    # ----------------------------
     theta = theta.reshape(left_dim, 4, right_dim)
     theta = np.tensordot(G, theta, axes=[1, 1])
     theta = np.transpose(theta, (1, 0, 2))
 
-    # ----------------------------
-    # SPLIT (SVD)
-    # ----------------------------
     theta = theta.reshape(left_dim * 2, 2 * right_dim)
 
     U, S, Vh = np.linalg.svd(theta, full_matrices=False)
 
-    # 🔥 TRUNCATION
     max_bond = 4
     keep = np.arange(len(S)) < max_bond
     if np.sum(keep) == 0:  # safety
@@ -45,8 +35,5 @@ def apply_two_qubit_gate(mps, G, k, cutoff=1e-10):
 
     r = S.shape[0]
 
-    # ----------------------------
-    # UPDATE MPS
-    # ----------------------------
     mps[k] = U.reshape(left_dim, 2, r)
     mps[k+1] = (np.diag(S) @ Vh).reshape(r, 2, right_dim)
