@@ -1,45 +1,83 @@
 import numpy as np
-from gates import hadamard
-
-# basis states
-zero = np.array([1, 0], dtype=complex)
-one = np.array([0, 1], dtype=complex)
-
-def create_zero_state(n):
-    """Create |00...0> for n qubits"""
-    state = zero
-    for _ in range(n - 1):
-        state = np.kron(state, zero)
-    return state
 
 
-'''I (eye) being the identity matrix: [[1,0][0,1]]'''
-def apply_single_qubit_gate(state, gate, qubit, n):
-    """Apply gate to a single qubit"""
-    I = np.eye(2, dtype=complex)
+# ----------------------------
+# APPLY GATE TO FULL STATE
+# ----------------------------
+def apply_full_gate(psi, G, N, k, two_qubit=False):
+    """
+    Apply a gate to a full quantum state.
 
-    op = 1
-    for i in range(n):
-        if i == qubit:
-            op = np.kron(op, gate)
-        else:
-            op = np.kron(op, I)
+    Parameters:
+    - psi: state vector (size 2^N)
+    - G: gate (2x2 for single, 4x4 for two-qubit)
+    - N: number of qubits
+    - k: target qubit index
+    - two_qubit: whether gate is 2-qubit
 
-    return op @ state
+    Returns:
+    - new state vector
+    """
 
-'''Controlled not for n-qubits'''
-def apply_cnot(state, control, target, n):
+    # reshape into tensor form
+    psi = psi.reshape([2] * N)
 
-    new_state = np.zeros_like(state)
+    if not two_qubit:
+        # ----------------------------
+        # SINGLE-QUBIT GATE
+        # ----------------------------
+        # Contract gate with qubit k
+        psi = np.tensordot(G, psi, axes=[1, k])
 
-    for i in range(len(state)):
-        bits = list(format(i, f'0{n}b'))
+        # Move new axis into position k
+        psi = np.moveaxis(psi, 0, k)
 
-        if bits[control] == '1':
-            bits[target] = '0' if bits[target] == '1' else '1'
+    else:
+        # ----------------------------
+        # TWO-QUBIT GATE
+        # ----------------------------
+        # reshape (4,4) → (2,2,2,2)
+        G = G.reshape(2, 2, 2, 2)
 
-        j = int("".join(bits), 2)
+        # Contract input indices with qubits k and k+1
+        psi = np.tensordot(G, psi, axes=[[2, 3], [k, k+1]])
 
-        new_state[j] += state[i]
+        # Move output indices back to positions k and k+1
+        psi = np.moveaxis(psi, [0, 1], [k, k+1])
 
-    return new_state
+    return psi.reshape(-1)
+
+
+# ----------------------------
+# OPTIONAL: DEBUG VERSION
+# ----------------------------
+def apply_full_gate_debug(psi, G, N, k, two_qubit=False):
+    psi = psi.reshape([2] * N)
+
+    print("\n--- DEBUG ---")
+    print("Initial psi shape:", psi.shape)
+
+    if not two_qubit:
+        print("Single-qubit gate")
+        print("G shape:", G.shape)
+
+        psi = np.tensordot(G, psi, axes=[1, k])
+        print("After tensordot:", psi.shape)
+
+        psi = np.moveaxis(psi, 0, k)
+        print("After moveaxis:", psi.shape)
+
+    else:
+        print("Two-qubit gate")
+        print("Original G shape:", G.shape)
+
+        G = G.reshape(2, 2, 2, 2)
+        print("Reshaped G:", G.shape)
+
+        psi = np.tensordot(G, psi, axes=[[2, 3], [k, k+1]])
+        print("After tensordot:", psi.shape)
+
+        psi = np.moveaxis(psi, [0, 1], [k, k+1])
+        print("After moveaxis:", psi.shape)
+
+    return psi.reshape(-1)
